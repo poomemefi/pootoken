@@ -9,12 +9,11 @@ This repository contains the code for an Ethereum-based ERC20 token smart contra
 - Name: POO Token
 - Symbol: POO
 - Total Supply: 8,000,000,000,000
-- Master Contract Address and Receiver: 0x6A3913caB99304F9e145C99D60017fa38FcD2CE4
 
 
 ## Key Features
 
-- The contract can conduct the following at any time by the master contract admin address (0x6A3913caB99304F9e145C99D60017fa38FcD2CE4).
+- The contract can conduct the following at any time by the master contract admin address
     - Increase or decrease allowance 
     - Lock or unlock token transfers
     - Paused and unpaused
