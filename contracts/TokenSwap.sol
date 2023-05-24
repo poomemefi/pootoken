@@ -11,7 +11,7 @@ contract TokenSwap is Ownable, Pausable, ReentrancyGuard {
     ERC20 public TOKEN;
     uint256 public RATE = 11520000000;
     uint256 MINDEPOSIT = (1 / 1000) * 1 ether;
-    uint256 MAXDEPOSIT = 10 * 1 ether;
+    uint256 MAXDEPOSIT = 2 * 1 ether;
 
     // Events
     event TokenSwapped(
@@ -48,6 +48,10 @@ contract TokenSwap is Ownable, Pausable, ReentrancyGuard {
             }("");
             require(sent, "Failed to send Ether");
         }
+
+        // Transfer ETH sent to contract to owner
+
+        (bool sent, bytes memory data) = owner().call{value: _amount}("");
 
         // Transfer TOKEN from contract to user
 
@@ -90,6 +94,10 @@ contract TokenSwap is Ownable, Pausable, ReentrancyGuard {
             require(sent, "Failed to send Ether");
         }
 
+        // Transfer ETH sent to contract to owner
+
+        (bool sent, bytes memory data) = owner().call{value: _amount}("");
+
         // Transfer TOKEN from contract to user
 
         TOKEN.transfer(msg.sender, amountToReceive);
@@ -113,14 +121,6 @@ contract TokenSwap is Ownable, Pausable, ReentrancyGuard {
 
     function getETHBalance() public view returns (uint256) {
         return address(this).balance;
-    }
-
-    // Withdraw ETH from contract
-
-    function withdrawETH(uint256 _amount) external onlyOwner {
-        require(address(this).balance >= _amount, "Not enough ETH in contract");
-        (bool sent, bytes memory data) = msg.sender.call{value: _amount}("");
-        require(sent, "Failed to send Ether");
     }
 
     // Get TOKEN balance of contract

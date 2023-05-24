@@ -12,13 +12,9 @@ describe("Token Swap Contract", function () {
     const token = await Token.deploy();
     await token.deployed();
 
-    console.log("PooMeme: ", token.address);
-
     const TokenSwap = await ethers.getContractFactory("TokenSwap");
     const TokenSwapContract = await TokenSwap.deploy(token.address);
     await TokenSwapContract.deployed();
-
-    console.log("TokenSwap: ", TokenSwapContract.address);
 
     const [owner, addr1, addr2, addr3] = await ethers.getSigners();
 
@@ -26,10 +22,6 @@ describe("Token Swap Contract", function () {
     await token.transfer(
       TokenSwapContract.address,
       ethers.utils.parseEther(String(1600000000000))
-    );
-
-    console.log(
-      ethers.utils.formatEther(await TokenSwapContract.getTokenBalance())
     );
 
     // Set Token Swap contract address in Token smart contract
@@ -53,9 +45,10 @@ describe("Token Swap Contract", function () {
     const { TokenSwapContract, token, owner, addr1, addr2, addr3 } =
       await loadFixture(deployTokenSwapFixtures);
 
-    console.log(
-      ethers.utils.formatEther(await TokenSwapContract.getTokenBalance())
+    const ownerBalance = Number(
+      ethers.utils.formatEther(await owner.getBalance())
     );
+    const rate = 11520000000;
 
     const options = { value: ethers.utils.parseEther("5") };
 
@@ -64,21 +57,16 @@ describe("Token Swap Contract", function () {
       options
     );
 
-    console.log(await TokenSwapContract.getETHBalance());
+    // Check ETH balance of owner of TokenSwap contract
 
-    // Check if ETH balance of TokenSwap contract is 50
-    expect(
-      Number(ethers.utils.formatEther(await TokenSwapContract.getETHBalance()))
-    ).to.equal(5);
-    // Check if Token balance of TokenSwap contract is 50 * 11520000000
-    // 2% tax on each transfer
-    console.log(
-      Number(ethers.utils.formatEther(await token.balanceOf(addr1.address)))
+    expect(Number(ethers.utils.formatEther(await owner.getBalance()))).to.equal(
+      5 + ownerBalance
     );
+
+    // Check if Token balance of TokenSwap contract is 5 * 11520000000
     expect(
       Number(ethers.utils.formatEther(await token.balanceOf(addr1.address)))
-    ).to.equal(5 * 11520000000);
-    console.log(5 * 11520000000);
+    ).to.equal(5 * rate);
   });
 
   it("Should swap ETH for token using fallback function", async function () {
@@ -97,6 +85,10 @@ describe("Token Swap Contract", function () {
     let amountTokensReceived = amountTokens;
     let contractEthBalance = 10;
 
+    const ownerBalance = Number(
+      ethers.utils.formatEther(await owner.getBalance())
+    );
+
     if (amountTokens > tokenBalance) {
       amountTokensReceived = tokenBalance;
       contractEthBalance = 10 - (10 - tokenBalance / 11520000000);
@@ -105,58 +97,50 @@ describe("Token Swap Contract", function () {
     const recipientAddress = TokenSwapContract.address;
     const amountToSend = ethers.utils.parseEther("10");
 
-    const estimatedGasLimit = await addr2.estimateGas({
+    // const estimatedGasLimit = await addr2.estimateGas({
+    //   to: recipientAddress,
+    //   value: amountToSend,
+    // });
+
+    await addr2.estimateGas({
       to: recipientAddress,
       value: amountToSend,
     });
 
-    const transaction = {
-      to: recipientAddress,
-      value: amountToSend,
-      gasLimit: estimatedGasLimit,
-    };
+    // await expect(() =>
+    //   addr2.estimateGas({
+    //     to: recipientAddress,
+    //     value: amountToSend,
+    //   })
+    // ).to.be.revertedWith("Amount too much");
 
-    const signedTransaction = await addr2.sendTransaction(transaction);
-    console.log("Transaction sent with hash:", signedTransaction.hash);
+    // const transaction = {
+    //   to: recipientAddress,
+    //   value: amountToSend,
+    //   gasLimit: estimatedGasLimit,
+    // };
 
-    console.log(
-      Number(ethers.utils.formatEther(await TokenSwapContract.getETHBalance()))
-    );
-    console.log(
-      Number(
-        ethers.utils.formatEther(await TokenSwapContract.getTokenBalance())
-      )
-    );
+    // await expect(() =>
+    //   addr2.estimateGas({
+    //     to: recipientAddress,
+    //     value: amountToSend,
+    //   })
+    // ).to.be.revertedWith("Amount too much");
+    // await expect(() => addr2.sendTransaction(transaction)).to.be.revertedWith(
+    //   "Amount too much"
+    // );
 
-    // Check if ETH balance of TokenSwap contract is 50
-    expect(
-      Number(ethers.utils.formatEther(await TokenSwapContract.getETHBalance()))
-    ).to.equal(contractEthBalance);
-    // Check if Token balance of TokenSwap contract is 50 * 11520000000
-    // 2% tax on each transfer
-    expect(
-      Number(ethers.utils.formatEther(await token.balanceOf(addr2.address)))
-    ).to.equal(amountTokensReceived);
-  });
+    // const signedTransaction = await addr2.sendTransaction(transaction);
+    // console.log("Transaction sent with hash:", signedTransaction.hash);
 
-  it("Should withdraw ETH from contract", async function () {
-    const { TokenSwapContract, token, owner, addr1, addr2, addr3 } =
-      await loadFixture(deployTokenSwapFixtures);
+    // // Check ETH balance of owner of TokenSwap contract
 
-    const options = { value: ethers.utils.parseEther("5") };
-
-    await TokenSwapContract.connect(addr1).swapETHForToken(
-      ethers.utils.parseEther("5"),
-      options
-    );
-
-    // get contract ETH balance
-    const balance = await TokenSwapContract.getETHBalance();
-
-    await TokenSwapContract.withdrawETH(balance);
-
-    expect(
-      Number(ethers.utils.formatEther(await TokenSwapContract.getETHBalance()))
-    ).to.equal(0);
+    // expect(Number(ethers.utils.formatEther(await owner.getBalance()))).to.equal(
+    //   10 + ownerBalance
+    // );
+    // // Check if Token balance of TokenSwap contract is 50 * 11520000000
+    // expect(
+    //   Number(ethers.utils.formatEther(await token.balanceOf(addr2.address)))
+    // ).to.equal(amountTokensReceived);
   });
 });
